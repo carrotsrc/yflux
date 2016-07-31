@@ -1,5 +1,7 @@
 
 #include "ast/visitors/PrinterVisitor.hpp"
+#include "ast/BinOpAst.hpp"
+#include "ast/CallAst.hpp"
 #include <cstdint>
 #include <iostream>
 using namespace yfx;
@@ -62,7 +64,23 @@ void PrinterVisitor::visit(VariableAst& node) {
 }
 
 void PrinterVisitor::visit(FunctionAst& node) {
-    std::cout << "Function node\n";
+    std::cout
+        << "Function node\n";
     
 }
 
+void PrinterVisitor::visit(BinOpAst& node) {
+    std::cout 
+        << "[Printer] Binary Op node\n";
+}
+
+void PrinterVisitor::visit(CallAst& node) {
+    std::cout 
+        << "[Printer] Call node `"<<node.calling() <<"()`" 
+        <<"(num args: "<< node.argsRef().size()
+        << "): \n";
+        for(auto& arg : node.argsRef()) {
+            std::cout << "\t";
+            arg->accept(*this);
+        }
+}

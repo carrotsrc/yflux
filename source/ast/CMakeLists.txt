@@ -5,6 +5,8 @@ set( SRC ${SRC}
          ${CLD}/ExprAst.cpp
          ${CLD}/VariableAst.cpp
          ${CLD}/FunctionAst.cpp
+         ${CLD}/CallAst.cpp
+         ${CLD}/BinOpAst.cpp
          ${CLD}/visitors/PrinterVisitor.cpp
      PARENT_SCOPE)
 

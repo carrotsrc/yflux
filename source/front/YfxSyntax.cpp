@@ -1,6 +1,8 @@
 #include <vector>
 #include <iostream>
 #include "front/YfxSyntax.hpp"
+#include "ast/BinOpAst.hpp"
+#include "ast/CallAst.hpp"
 
 using namespace yfx;
 
@@ -33,18 +35,58 @@ void YfxSyntax::runTopLevel() {
     } 
 }
 
+expr_uptr YfxSyntax::parseBinaryOps(int exPrec, expr_uptr lhs) {
+    while(true) {
+        auto tokPrec = getPrecedence(type());
+        
+        if(tokPrec < exPrec)
+            return lhs;
+        
+        auto op = type();
+        nextToken();
+        auto rhs = parsePrimary();
+        
+        // if(!rhs) return nullptr;
+        
+        int nextPrec = getPrecedence(type());
+        if(tokPrec < nextPrec) {
+            rhs = parseBinaryOps(tokPrec+1, std::move(rhs));
+            // if(!rhs) return nullptr;
+        }
+        
+        lhs = expr_uptr(new BinOpAst(op, std::move(lhs), std::move(rhs)));
+    }
+}
+
+
 expr_uptr YfxSyntax::parseTopLevel() {
     std::cout << "Parsing top level\n";
     while(type() != TokenType::Eof) {
-        parsePrimary();
+        parseExpression();
         nextToken();
     }
 }
 
-expr_uptr YfxSyntax::parsePrimary() {
+expr_uptr YfxSyntax::parseExpression() {
+    
     switch(type()) {
         case TokenType::VariableDeclare:
+            push(YfxToken::Mode::LhsVariableDeclare);
             return parseVariableDeclare();
+    }
+    
+    auto lhs = parsePrimary();
+    return parseBinaryOps(0, std::move(lhs));
+}
+
+expr_uptr YfxSyntax::parsePrimary() {
+    switch(type()) {
+        case TokenType::Integer:
+            return parseIntegerValue(_token, PrimitiveType::I32);
+        case TokenType::Float:
+            return parseFloatValue(_token, PrimitiveType::F32);
+        case TokenType::Identifier:
+            return parseIdentifier();
         default: return expr_uptr(nullptr);
     }
 }
@@ -75,19 +117,70 @@ expr_uptr YfxSyntax::parseVariableDeclare() {
     nextToken();
     
     if(type() == TokenType::Semicolon) {
+        popToScope();
         auto v = new VariableAst(name, mut);
         visit(*v);
         return expr_uptr(nullptr);
     }    
     
     if(type() == TokenType::OperatorBind) {
+        push(YfxToken::RhsVariableBind);
         auto v = new VariableAst(name, mut);
         visit(*v);
         return  parseValueBind();
     }
 }
 
+expr_uptr YfxSyntax::parseIdentifier() {
+    auto t = _token;
+    nextToken();
+    
+    if(type() != TokenType::LeftParen) {
+       auto v = std::make_unique<VariableAst>(t.str, false);
+       visit(*v);
+       return v;
+    }
+    
+    // We are in a call
+    
+    nextToken();
+    std::vector<expr_uptr> args;
+    
+    if(type() != TokenType::RightParen) {
+        while(true) {
+            if(auto arg = parseExpression()) {
+                args.push_back(std::move(arg));
+            } else {
+                return nullptr;
+            }
+            
+            if(type() == TokenType::RightParen)
+                break;
+            
+            if(type() != TokenType::Comma) {
+                std::cerr << "Expected `)` or `,` in argument list";
+                return nullptr;
+            }
+            
+            nextToken();
+        }
+    }    
+    nextToken();
+    
+    auto call = std::make_unique<CallAst>(t.str, std::move(args));
+    
+    visit(*call);
+    
+    return std::move(call);   
+}
+
+
 expr_uptr YfxSyntax::parseValueBind() {
+    nextToken();
+    return parseExpression();
+    
+    // all this will be ploughed
+    /*
     auto value = nextToken();
     Token vtype;
 
@@ -99,8 +192,10 @@ expr_uptr YfxSyntax::parseValueBind() {
     auto finisher = [this](auto ptr) {
         auto p = std::move(ptr);
         if(type() == TokenType::Semicolon) {
+            popToScope();
             return std::move(p);
         } else if(type() == TokenType::Comma) {
+            popToMode(SynMode::LhsVariableDeclare);
             parseVariableDeclare();
             return std::move(p);
         } else {
@@ -134,6 +229,7 @@ expr_uptr YfxSyntax::parseValueBind() {
           }
 
       }
+     */
 }
 
 expr_uptr YfxSyntax::parseIntegerValue(Token& i, PrimitiveType t) {
@@ -196,9 +292,24 @@ expr_uptr YfxSyntax::parseFloatValue(Token& i, PrimitiveType t) {
     }
 }
 
+int YfxSyntax::getPrecedence(TokenType token) {
+    auto it = _precedence.find(token);
+    if(it == std::end(_precedence)) return -1;
+    
+    return it->second;
+}
 
 
+void YfxSyntax::popToScope() {
+    while(top() != SynMode::LhsFuncScope 
+    && top()    != SynMode::LhsModuleScope
+    && top()    != SynMode::LhsGlobalScope) {
+        pop();
+    }
+}
 
-
-
-
+void YfxSyntax::popToMode(SynMode mode) {
+    while(top() != mode && top() != SynMode::LhsGlobalScope) {
+        pop();
+    }
+}

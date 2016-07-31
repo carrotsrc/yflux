@@ -4,12 +4,9 @@
 #include "front/MemSourceContainer.hpp"
 
 std::string srctxt = "  \
-let% mvar;              \
-let  ival = 34;         \
-let  jval = 34   ~u64,  \
-   % kval = 455  ~i64,  \
-     lval = 1283 ~u32;  \
-let% fval = 34.5 ~f32;  \
+func1();                \
+func2(a);               \
+func3(a,b);             \
 ";
 
 int main() {

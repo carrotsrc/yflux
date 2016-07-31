@@ -21,6 +21,9 @@ enum class TokenType {
 	
 	Semicolon,
 	Comma,
+
+	LeftParen,
+	RightParen,
 	
 	Identifier,
 	TypeSpecifier,
@@ -34,12 +37,31 @@ enum class TokenType {
 	Float,
 	
 	OperatorBind,
-	OperatorBitwiseNot,
-	OperatorModulus,
-	OperatorEquality,
+
+	BitwiseNot,
+	BitwiseAnd,	
+	BitwiseOr,
 	
-	QualifierMutable,
+	ArithmeticAdd,
+	ArithmeticSub,
+	ArithmeticMul,
+	ArithmeticDiv,
+	ArithmeticModulo,
+	ArithemeticIncrement,
+	ArithemeticDecrement,
 	
+	RelationalLess,
+	RelationalLessEqual,
+	RelationalGreater,
+	RelationalGreaterEqual,
+	RelationalEquality,
+	RelationalNotEquality,
+	
+	LogicalAnd,
+	LogicalOr,
+	LogicalNot,
+	
+	QualifierMutable,	
 };
 
 enum class PrimitiveType {

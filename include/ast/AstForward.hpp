@@ -30,6 +30,8 @@ using Sample32Ast = Float32Ast;
 
 class VariableAst;
 class FunctionAst;
+class CallAst;
+class BinOpAst;
 
 }
 #endif /* ASTFORWARD_HPP */

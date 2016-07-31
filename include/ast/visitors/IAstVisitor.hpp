@@ -24,6 +24,8 @@ public:
 	
 	virtual void visit(VariableAst& node) = 0;
 	virtual void visit(FunctionAst& node) = 0;
+	virtual void visit(CallAst& node) = 0;
+	virtual void visit(BinOpAst& node) = 0;
 };
 
 }

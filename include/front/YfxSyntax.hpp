@@ -19,33 +19,65 @@ public:
 private:
 	std::vector< std::unique_ptr<IAstVisitor> > _visitors;
 	YfxToken _processor;
-	Token _token;
+	Token _token, _last;
 	
 	void runTopLevel();
+	
 	expr_uptr parseTopLevel();
+	expr_uptr parseExpression();
 	
 	expr_uptr parsePrimary();
 	expr_uptr parseVariableDeclare();
 	expr_uptr parseValueBind();
+	expr_uptr parseIdentifier();
 	
 	expr_uptr parseIntegerValue(Token& v, PrimitiveType t);
 	expr_uptr parseFloatValue(Token& v, PrimitiveType t);
 	
-	inline Token nextToken();
+	expr_uptr parseBinaryOps(int xprec, expr_uptr lhs);
 	
+	
+	int getPrecedence(TokenType token);
+	
+	inline Token nextToken();
 	inline TokenType type();
+	inline void push(SynMode mode);
+	inline void pop();
+	void popToScope();
+	void popToMode(SynMode mode);
+	inline YfxToken::Mode top();
 	
 	template<class AstType>
 	void visit(AstType& t);
+	
+	std::map<TokenType, int> _precedence = {
+		{ TokenType::RelationalLess, 10 },
+		{ TokenType::ArithmeticAdd,  20 },
+		{ TokenType::ArithmeticSub,  30 },
+		{ TokenType::ArithmeticMul,  40 },
+	};
 };
 
 Token YfxSyntax::nextToken() {
+	_last = _token;
 	_token = _processor.nextToken();
 	return _token;
 }
 
 TokenType YfxSyntax::type() {
 		return _token.type;
+}
+
+void YfxSyntax::push(SynMode mode) {
+	_processor.push(mode);
+}
+
+void YfxSyntax::pop() {
+	_processor.pop();
+}
+
+inline SynMode YfxSyntax::top() {
+	return _processor.top();
 }
 
 template<class AstType>

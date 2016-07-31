@@ -25,6 +25,10 @@ public:
 	
 	void visit(VariableAst& node) override;
 	void visit(FunctionAst& node) override;
+	void visit(BinOpAst& node) override;
+	void visit(CallAst& node) override;
+
+
 private:
 
 };

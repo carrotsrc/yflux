@@ -15,6 +15,7 @@ public:
 	void setBuffer(std::unique_ptr<ISourceContainer> source);
 	const Token nextToken();
 	
+	
 	enum Mode {
 		LhsGlobalScope,
 		LhsModuleScope,
@@ -25,7 +26,13 @@ public:
 		
 		RhsVariableBind,
 		RhsTypeSpecifier,
+		RhsPrimary,
 	};
+	
+	void push(YfxToken::Mode mode);
+	void pop();
+	YfxToken::Mode top();
+	
 	
 private:
 	std::unique_ptr<ISourceContainer> _source;
@@ -47,6 +54,12 @@ private:
 	const Token processSpecEquals();
 	const Token processSpecComma();
 	const Token processSpecSemi();
+	
+	const Token processSpecLessThan();
+	const Token processSpecGreaterThan();
+	const Token processSpecAdd();
+	const Token processSpecSub();
+	const Token processSpecMul();
 	
 	
 	std::map<std::string, PrimitiveType> _primitives = {
@@ -75,6 +88,8 @@ inline void YfxToken::rewindChar() {
 	_ch = _source->rewindChar();
 	
 }
+
+using SynMode = YfxToken::Mode;
 }
 #endif /* SOURCEPROCESSOR_HPP */
 

@@ -46,6 +46,14 @@ const Token YfxToken::extractNext() {
         case '=': nextChar(); return processSpecEquals();
         case ',': nextChar(); return processSpecComma();
         case ';': nextChar(); return processSpecSemi();
+        
+        case '<': nextChar(); return processSpecLessThan();
+        
+        case '*': nextChar(); return processSpecMul();
+        case '+': nextChar(); return processSpecAdd();
+        case '-': nextChar(); return processSpecSub();
+        case '(': nextChar(); return Token(TokenType::LeftParen);
+        case ')': nextChar(); return Token(TokenType::RightParen);
     }
     
     // Identifier
@@ -56,7 +64,7 @@ const Token YfxToken::extractNext() {
             ident.push_back(_ch);
             nextChar();
         }
-        //rewindChar();
+
         return processIdent(ident);
     }
     
@@ -97,12 +105,10 @@ const Token YfxToken::processIdent(std::string& ident) {
     }
     
     // Keywords
-    if(ident == "func") {
-        _state.push(Mode::LhsFunctionDeclare);
+    if(ident == "func") {        
         return Token(TokenType::FunctionDeclare); 
     }
     if(ident == "let") {
-        _state.push(Mode::LhsVariableDeclare);
         return Token(TokenType::VariableDeclare); 
     }
     
@@ -123,14 +129,14 @@ const Token YfxToken::processSpecTilde() {
             _state.push(Mode::RhsTypeSpecifier);
             return Token(TokenType::TypeSpecifier);
             
-        default: return Token(TokenType::OperatorBitwiseNot);
+        default: return Token(TokenType::BitwiseNot);
     }
 }
 
 const Token YfxToken::processSpecPerc() {
     switch(_state.top()) {
         case Mode::LhsVariableDeclare: return Token(TokenType::QualifierMutable);
-        default: return Token(TokenType::OperatorModulus);
+        default: return Token(TokenType::ArithmeticModulo);
     }
 }
 
@@ -139,7 +145,6 @@ const Token YfxToken::processSpecEquals() {
     
     switch(_state.top()) {
         case Mode::LhsVariableDeclare:
-            _state.push(Mode::RhsVariableBind);
             return Token(TokenType::OperatorBind);
 
         default: break;
@@ -147,7 +152,7 @@ const Token YfxToken::processSpecEquals() {
     switch(ch) {
         case '=':
             _source->closeDelta();
-            return Token(TokenType::OperatorEquality);
+            return Token(TokenType::RelationalEquality);
 
         default: return Token(TokenType::Unknown);
     }
@@ -155,26 +160,47 @@ const Token YfxToken::processSpecEquals() {
 }
 
 const Token YfxToken::processSpecComma() {
-    if(_state.top() == Mode::RhsVariableBind
-    || _state.top() == RhsTypeSpecifier) {
-        while(_state.top() != Mode::LhsVariableDeclare) {
-            _state.pop();
-        }
-    }
-    
     return Token(TokenType::Comma);
 }
 
 const Token YfxToken::processSpecSemi() {
-    // End of expression, pop till in scope
-    while(_state.top() != Mode::LhsFuncScope
-    && _state.top() != Mode::LhsModuleScope
-    && _state.top() != Mode::LhsGlobalScope) {
-        _state.pop();
-    }
-
     return Token(TokenType::Semicolon);
 }
+
+const Token YfxToken::processSpecLessThan() {
+    return Token(TokenType::RelationalLess);
+}
+
+const Token YfxToken::processSpecGreaterThan() {
+    return Token(TokenType::RelationalGreater);
+}
+
+const Token YfxToken::processSpecMul() {
+    return Token(TokenType::ArithmeticMul);
+}
+
+const Token YfxToken::processSpecAdd() {
+    return Token(TokenType::ArithmeticAdd);
+}
+
+const Token YfxToken::processSpecSub() {
+    return Token(TokenType::ArithmeticSub);
+}
+
+void YfxToken::push(YfxToken::Mode mode) {
+    _state.push(mode);
+}
+
+void YfxToken::pop() {
+    _state.pop();
+}
+
+YfxToken::Mode YfxToken::top() {
+    return _state.top();
+}
+
+
+
 
 
 
