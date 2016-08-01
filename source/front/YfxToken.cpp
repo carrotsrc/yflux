@@ -91,8 +91,9 @@ const Token YfxToken::extractNext() {
         t.str = number;
         return t;
     }
-
-    return Token(TokenType::Unknown);
+    std::string out;
+    out.push_back(_ch);
+    return Token(TokenType::Unknown, out);
 }
 
 const Token YfxToken::processIdent(std::string& ident) {
@@ -126,7 +127,6 @@ const Token YfxToken::processSpecTilde() {
     
     switch(t.type) {
         case TokenType::PrimitiveType:
-            _state.push(Mode::RhsTypeSpecifier);
             return Token(TokenType::TypeSpecifier);
             
         default: return Token(TokenType::BitwiseNot);
@@ -141,7 +141,6 @@ const Token YfxToken::processSpecPerc() {
 }
 
 const Token YfxToken::processSpecEquals() {
-    auto ch = _source->peekChar();
     
     switch(_state.top()) {
         case Mode::LhsVariableDeclare:
@@ -149,12 +148,18 @@ const Token YfxToken::processSpecEquals() {
 
         default: break;
     }
+
+    auto ch = _source->peekChar();
     switch(ch) {
         case '=':
             _source->closeDelta();
             return Token(TokenType::RelationalEquality);
 
-        default: return Token(TokenType::Unknown);
+        default: {
+            std::string out;
+            out.push_back(_ch);
+            return Token(TokenType::Unknown, std::string(out));
+        }
     }
     
 }

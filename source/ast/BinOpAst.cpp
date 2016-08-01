@@ -36,3 +36,10 @@ TokenType BinOpAst::op() {
 void BinOpAst::accept(IAstVisitor& visitor) {
     visitor.visit(*this);
 }
+
+bool BinOpAst::hadRhs() {
+    if(!_rhs) return false;
+    
+    return true;
+}
+

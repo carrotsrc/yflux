@@ -19,7 +19,7 @@ public:
 private:
 	std::vector< std::unique_ptr<IAstVisitor> > _visitors;
 	YfxToken _processor;
-	Token _token, _last;
+	Token _token, _last, _ident;
 	
 	void runTopLevel();
 	
@@ -28,7 +28,7 @@ private:
 	
 	expr_uptr parsePrimary();
 	expr_uptr parseVariableDeclare();
-	expr_uptr parseValueBind();
+	expr_uptr parseValueBind(expr_uptr var);
 	expr_uptr parseIdentifier();
 	
 	expr_uptr parseIntegerValue(Token& v, PrimitiveType t);
@@ -45,6 +45,7 @@ private:
 	inline void pop();
 	void popToScope();
 	void popToMode(SynMode mode);
+	void popBeyond(SynMode mode);
 	inline YfxToken::Mode top();
 	
 	template<class AstType>

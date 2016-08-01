@@ -27,10 +27,14 @@ public:
 	void visit(FunctionAst& node) override;
 	void visit(BinOpAst& node) override;
 	void visit(CallAst& node) override;
+	void visit(BindAst& node) override;
+	void visit(DeclareAst& node) override;
 
 
 private:
-
+	int _depth;
+	
+	void printTab();
 };
 
 }

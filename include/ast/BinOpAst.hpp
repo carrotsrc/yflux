@@ -34,6 +34,8 @@ public:
 	expr_uptr lhs();
 	expr_uptr rhs();
 	
+	bool hadRhs();
+	
 	TokenType op();
 	
 	void accept(IAstVisitor& visitor);

@@ -64,6 +64,7 @@ enum class TokenType {
 	QualifierMutable,	
 };
 
+
 enum class PrimitiveType {
 	Unknown,
 	I16, I32, I64,
@@ -81,6 +82,9 @@ struct Token {
 		: type(type), str(), i64(0), f32(0.0), d64(0.0)
 	{};
 	
+	Token(TokenType type, std::string tokstr)
+		: type(type), str(tokstr), i64(0), f32(0.0), d64(0.0)
+	{ }
 	TokenType     type;
 	PrimitiveType primitive;
 	std::string   str;

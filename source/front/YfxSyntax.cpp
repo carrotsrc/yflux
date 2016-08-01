@@ -3,8 +3,13 @@
 #include "front/YfxSyntax.hpp"
 #include "ast/BinOpAst.hpp"
 #include "ast/CallAst.hpp"
-
+#include "LangCommon.hpp"
+#include "TokenStrings.hpp"
 using namespace yfx;
+
+
+
+
 
 YfxSyntax::YfxSyntax() {
 }
@@ -36,22 +41,26 @@ void YfxSyntax::runTopLevel() {
 }
 
 expr_uptr YfxSyntax::parseBinaryOps(int exPrec, expr_uptr lhs) {
+
     while(true) {
         auto tokPrec = getPrecedence(type());
-        
-        if(tokPrec < exPrec)
+
+        if(tokPrec < exPrec) {
+
             return lhs;
+        }
         
         auto op = type();
         nextToken();
+
         auto rhs = parsePrimary();
         
-        // if(!rhs) return nullptr;
+         if(!rhs) return nullptr;
         
         int nextPrec = getPrecedence(type());
         if(tokPrec < nextPrec) {
             rhs = parseBinaryOps(tokPrec+1, std::move(rhs));
-            // if(!rhs) return nullptr;
+            if(!rhs) return nullptr;
         }
         
         lhs = expr_uptr(new BinOpAst(op, std::move(lhs), std::move(rhs)));
@@ -60,31 +69,50 @@ expr_uptr YfxSyntax::parseBinaryOps(int exPrec, expr_uptr lhs) {
 
 
 expr_uptr YfxSyntax::parseTopLevel() {
-    std::cout << "Parsing top level\n";
+    
     while(type() != TokenType::Eof) {
-        parseExpression();
+
+        auto e = parseExpression();
+        
+        if(type() == TokenType::Semicolon) {
+            popToScope();
+        }
+        if(type() == TokenType::Comma) {
+           if(top() == SynMode::RhsVariableBind) {
+               popToMode(SynMode::LhsVariableDeclare);
+           }
+        }
+    
         nextToken();
     }
 }
 
 expr_uptr YfxSyntax::parseExpression() {
+
     
     switch(type()) {
         case TokenType::VariableDeclare:
             push(YfxToken::Mode::LhsVariableDeclare);
-            return parseVariableDeclare();
+            auto decl = parseVariableDeclare();
+            return std::move(decl);
     }
-    
+
     auto lhs = parsePrimary();
     return parseBinaryOps(0, std::move(lhs));
 }
 
 expr_uptr YfxSyntax::parsePrimary() {
+    
+    auto t = _token;
     switch(type()) {
         case TokenType::Integer:
-            return parseIntegerValue(_token, PrimitiveType::I32);
+            nextToken();
+            return parseIntegerValue(t, PrimitiveType::I32);
+
         case TokenType::Float:
-            return parseFloatValue(_token, PrimitiveType::F32);
+            nextToken();
+            return parseFloatValue(t, PrimitiveType::F32);
+
         case TokenType::Identifier:
             return parseIdentifier();
         default: return expr_uptr(nullptr);
@@ -92,61 +120,76 @@ expr_uptr YfxSyntax::parsePrimary() {
 }
 
 expr_uptr YfxSyntax::parseVariableDeclare() {
-    nextToken();
-    auto mut = false;
-    std::string name;
     
-    while(1) {
-        switch(type()) {
-            case TokenType::QualifierMutable:
-                mut = true;
-                nextToken();
-                continue;
-                break;
-                
-            case TokenType::Identifier:
-                name = _token.str;
-                break;
+    nextToken();
+    expr_uptr decl;
+    while(type() != TokenType::Semicolon) {
+        auto mut = false;
+        std::string name;
+        expr_uptr v;
+        while(1) {
+            switch(type()) {
+                case TokenType::QualifierMutable:
+                    mut = true;
+                    nextToken();
+                    continue;
+                    break;
 
-            default:
-                std::cerr << "Syntax error on declaration, unexpected token" << std::endl;
-                return expr_uptr(nullptr);
+                case TokenType::Identifier:
+                    v = std::make_unique<VariableAst>(_token.str, mut);
+                    decl = std::make_unique<DeclareAst>(std::move(v), parseIdentifier());
+                    visit(*decl);
+                    break;
+
+                default:
+                    std::cerr 
+                        << "Syntax error on declaration, unexpected token " 
+                        << TokenStrings[type()]
+                        << " `" << _token.str << "`\n";
+                    return expr_uptr(nullptr);
+            }
+            break;
         }
-        break;
+        if(type() == TokenType::Comma) {
+            std::cerr << "Mode: " << static_cast<int>(top()) << "\n";
+            popToMode(SynMode::LhsVariableDeclare);
+            nextToken();
+        }
     }
-    nextToken();
-    
-    if(type() == TokenType::Semicolon) {
-        popToScope();
-        auto v = new VariableAst(name, mut);
-        visit(*v);
-        return expr_uptr(nullptr);
-    }    
-    
-    if(type() == TokenType::OperatorBind) {
-        push(YfxToken::RhsVariableBind);
-        auto v = new VariableAst(name, mut);
-        visit(*v);
-        return  parseValueBind();
-    }
+    //auto decl = std::make_unique<DeclareAst>(v)
+    return std::move(decl);
 }
 
 expr_uptr YfxSyntax::parseIdentifier() {
+    
+    _ident = _token;
     auto t = _token;
     nextToken();
     
-    if(type() != TokenType::LeftParen) {
+    if(type() != TokenType::LeftParen && type() != TokenType::OperatorBind) {
        auto v = std::make_unique<VariableAst>(t.str, false);
        visit(*v);
        return v;
+    }
+    
+    if(type() == TokenType::OperatorBind) {
+        push(SynMode::RhsVariableBind);
+        auto binding = parseValueBind(
+                            std::make_unique<VariableAst>(t.str, false)
+                        );
+        popBeyond(SynMode::RhsVariableBind);
+        return std::move(binding);
     }
     
     // We are in a call
     
     nextToken();
     std::vector<expr_uptr> args;
+    push(SynMode::FuncActualParams);
     
     if(type() != TokenType::RightParen) {
+        
+
         while(true) {
             if(auto arg = parseExpression()) {
                 args.push_back(std::move(arg));
@@ -164,7 +207,8 @@ expr_uptr YfxSyntax::parseIdentifier() {
             
             nextToken();
         }
-    }    
+    }
+    popBeyond(SynMode::FuncActualParams);
     nextToken();
     
     auto call = std::make_unique<CallAst>(t.str, std::move(args));
@@ -175,96 +219,40 @@ expr_uptr YfxSyntax::parseIdentifier() {
 }
 
 
-expr_uptr YfxSyntax::parseValueBind() {
-    nextToken();
-    return parseExpression();
-    
-    // all this will be ploughed
-    /*
-    auto value = nextToken();
-    Token vtype;
+expr_uptr YfxSyntax::parseValueBind(expr_uptr var) {
 
-    if(nextToken().type == TokenType::TypeSpecifier) {
-        vtype = nextToken();
-        nextToken(); // Get to the next part of expression
-    }
-    
-    auto finisher = [this](auto ptr) {
-        auto p = std::move(ptr);
-        if(type() == TokenType::Semicolon) {
-            popToScope();
-            return std::move(p);
-        } else if(type() == TokenType::Comma) {
-            popToMode(SynMode::LhsVariableDeclare);
-            parseVariableDeclare();
-            return std::move(p);
-        } else {
-            std::cerr << "Expected end of expression `;`\n";
-            return expr_uptr(nullptr);
-        }
-    };
-    
-    if(value.type == TokenType::Integer) {
-
-          if(vtype.type != TokenType::Undefined 
-          && vtype.type == TokenType::PrimitiveType) {
-              // Type has been specified
-                return finisher(parseIntegerValue(value, vtype.primitive));
-         } else {
-              // No type specified
-              // Todo: Infer integer type here
-              return finisher(parseIntegerValue(value, PrimitiveType::I32));
-          }
-      }
-
-      if(value.type == TokenType::Float) {
-          if(vtype.type != TokenType::Undefined 
-          && vtype.type == TokenType::PrimitiveType) {
-              // Type has been specified
-            return finisher(parseFloatValue(value, vtype.primitive));
-          } else {
-              // No type specified
-              // Todo: Infer integer type here
-            return finisher(parseFloatValue(value, PrimitiveType::F32));
-          }
-
-      }
-     */
+    nextToken(); // remove `=`
+    auto expression = parseExpression();
+    return std::make_unique<BindAst>(std::move(var), std::move(expression));
 }
 
 expr_uptr YfxSyntax::parseIntegerValue(Token& i, PrimitiveType t) {
-
+    
     switch(t) {
         case PrimitiveType::I16: {
             auto v = new Int16Ast(std::stoll(i.str));
-            visit(*v);
-            return expr_uptr(nullptr);
+            return expr_uptr(v);
         }
         case PrimitiveType::I32: {
             auto v = new Int32Ast(std::stoll(i.str));
-            visit(*v);
-            return expr_uptr(nullptr);
+            return expr_uptr(v);
         }
         case PrimitiveType::I64: {
             auto v = new Int64Ast(std::stoll(i.str));
-            visit(*v);
-            return expr_uptr(nullptr);
+            return expr_uptr(v);
         }
             
         case PrimitiveType::U16: {
             auto v = new UInt16Ast(std::stoull(i.str));
-            visit(*v);
-            return expr_uptr(nullptr);
+            return expr_uptr(v);
         }
         case PrimitiveType::U32: {
             auto v = new UInt32Ast(std::stoull(i.str));
-            visit(*v);
-            return expr_uptr(nullptr);
+            return expr_uptr(v);
         }
         case PrimitiveType::U64: {
             auto v = new UInt64Ast(std::stoull(i.str));
-            visit(*v);
-            return expr_uptr(nullptr);
+            return expr_uptr(v);
         }
             
         default:
@@ -277,13 +265,11 @@ expr_uptr YfxSyntax::parseFloatValue(Token& i, PrimitiveType t) {
     switch(t) {
         case PrimitiveType::F32: {
             auto v = new Float32Ast(std::stof(i.str));
-            visit(*v);
-            return expr_uptr(nullptr);
+            return expr_uptr(v);
         }
         case PrimitiveType::F64: {
             auto v = new Float64Ast(std::stod(i.str));
-            visit(*v);
-            return expr_uptr(nullptr);
+            return expr_uptr(v);
         }
             
         default:
@@ -312,4 +298,13 @@ void YfxSyntax::popToMode(SynMode mode) {
     while(top() != mode && top() != SynMode::LhsGlobalScope) {
         pop();
     }
+    
+    if(top() == SynMode::LhsGlobalScope && mode != top()) {
+        std::cerr << "Error: Asymmetric state stack, popped to global scope\n";
+    }
+}
+
+void YfxSyntax::popBeyond(SynMode mode) {
+    popToMode(mode);
+    pop();
 }

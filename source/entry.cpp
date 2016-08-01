@@ -4,9 +4,12 @@
 #include "front/MemSourceContainer.hpp"
 
 std::string srctxt = "  \
+let meta;               \
+let foo = 1000*5+2;       \
 func1();                \
 func2(a);               \
-func3(a,b);             \
+let d = func3(a,b),     \
+    e = 123;            \
 ";
 
 int main() {

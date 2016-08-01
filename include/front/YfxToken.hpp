@@ -27,6 +27,9 @@ public:
 		RhsVariableBind,
 		RhsTypeSpecifier,
 		RhsPrimary,
+		
+		FuncFormalParams,
+		FuncActualParams,
 	};
 	
 	void push(YfxToken::Mode mode);

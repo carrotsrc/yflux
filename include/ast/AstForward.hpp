@@ -32,6 +32,8 @@ class VariableAst;
 class FunctionAst;
 class CallAst;
 class BinOpAst;
+class BindAst;
+class DeclareAst;
 
 }
 #endif /* ASTFORWARD_HPP */
