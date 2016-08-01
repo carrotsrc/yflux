@@ -151,7 +151,6 @@ expr_uptr YfxSyntax::parseVariableDeclare() {
             break;
         }
         if(type() == TokenType::Comma) {
-            std::cerr << "Mode: " << static_cast<int>(top()) << "\n";
             popToMode(SynMode::LhsVariableDeclare);
             nextToken();
         }
@@ -169,6 +168,13 @@ expr_uptr YfxSyntax::parseIdentifier() {
     if(type() != TokenType::LeftParen && type() != TokenType::OperatorBind) {
        auto v = std::make_unique<VariableAst>(t.str, false);
        visit(*v);
+       
+       // If we're in a variable declare and there is no binding, we don't
+       // need this node since it's a duplicate of the one in the `declare`
+       // node
+       if(top() == SynMode::LhsVariableDeclare) return nullptr;
+       
+       // We need the node
        return v;
     }
     
