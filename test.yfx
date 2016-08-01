@@ -1,0 +1,6 @@
+let meta;
+let foo = 1000*5+2+foobar(l,r);
+func1();
+func2(a);
+let d = func3(a,b),
+   %e = 123;
