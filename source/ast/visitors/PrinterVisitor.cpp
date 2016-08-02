@@ -77,9 +77,19 @@ void PrinterVisitor::visit(VariableAst& node) {
 void PrinterVisitor::visit(FunctionAst& node) {
     printTab();
     std::cout
-        << "Function node\n";
+        << "[Printer] Function\n";
     
+    _depth++;
+    node.protoRef().accept(*this);
+    _depth--;
     
+    printTab();
+    std::cout
+        << " + Body\n";
+    
+    _depth++;
+    node.bodyRef().accept(*this);
+    _depth--;
 }
 
 void PrinterVisitor::visit(BinOpAst& node) {
@@ -165,3 +175,18 @@ void PrinterVisitor::printTab() {
     }
 }
 
+void PrinterVisitor::visit(PrototypeAst& node) {
+    printTab();
+        std::cout 
+            << "[Printer] Prototype "
+            << node.name() << "(";
+        
+        auto args = node.args();
+        for(auto i = std::begin(args); i != std::end(args); i++) {
+            std::cout << *i;
+            if(i+1 != std::end(args))
+                std::cout << ", ";
+        }
+        
+         std::cout << ")\n";
+}

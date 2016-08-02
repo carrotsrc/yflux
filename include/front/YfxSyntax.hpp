@@ -28,6 +28,11 @@ private:
 	
 	expr_uptr parsePrimary();
 	expr_uptr parseVariableDeclare();
+	expr_uptr parseFunctionDeclare();
+	expr_uptr parseFunctionPrototype();
+	expr_uptr parseScopeBody();
+	
+	
 	expr_uptr parseValueBind(expr_uptr var);
 	expr_uptr parseIdentifier();
 	

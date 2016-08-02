@@ -73,33 +73,41 @@ expr_uptr YfxSyntax::parseTopLevel() {
     while(type() != TokenType::Eof) {
 
         auto e = parseExpression();
-        
+
         if(type() == TokenType::Semicolon) {
             popToScope();
         }
+
         if(type() == TokenType::Comma) {
            if(top() == SynMode::RhsVariableBind) {
                popToMode(SynMode::LhsVariableDeclare);
            }
         }
-    
+
         nextToken();
     }
 }
 
 expr_uptr YfxSyntax::parseExpression() {
 
-    
     switch(type()) {
-        case TokenType::VariableDeclare:
+        case TokenType::VariableDeclare: {
             push(YfxToken::Mode::LhsVariableDeclare);
-            auto decl = parseVariableDeclare();
-            return std::move(decl);
+            return parseVariableDeclare();
+        }
+        case TokenType::FunctionDeclare: {
+            push(SynMode::LhsFunctionDeclare);
+            auto f = parseFunctionDeclare();
+            popBeyond(SynMode::LhsFunctionDeclare);
+            visit(*f);
+            return std::move(f);
+        }
     }
 
     auto lhs = parsePrimary();
     return parseBinaryOps(0, std::move(lhs));
 }
+
 
 expr_uptr YfxSyntax::parsePrimary() {
     
@@ -121,7 +129,8 @@ expr_uptr YfxSyntax::parsePrimary() {
 
 expr_uptr YfxSyntax::parseVariableDeclare() {
     
-    nextToken();
+    nextToken(); // Remove `let`
+
     expr_uptr decl;
     while(type() != TokenType::Semicolon) {
         auto mut = false;
@@ -129,15 +138,16 @@ expr_uptr YfxSyntax::parseVariableDeclare() {
         expr_uptr v;
         while(1) {
             switch(type()) {
-                case TokenType::QualifierMutable:
+                case TokenType::QualifierMutable: // `%` encountered
                     mut = true;
                     nextToken();
                     continue;
                     break;
 
-                case TokenType::Identifier:
+                case TokenType::Identifier: // Variable name encountered
                     v = std::make_unique<VariableAst>(_token.str, mut);
-                    decl = std::make_unique<DeclareAst>(std::move(v), parseIdentifier());
+                    decl = std::make_unique<DeclareAst>(std::move(v), 
+                                                        parseIdentifier());
                     visit(*decl);
                     break;
 
@@ -155,7 +165,6 @@ expr_uptr YfxSyntax::parseVariableDeclare() {
             nextToken();
         }
     }
-    //auto decl = std::make_unique<DeclareAst>(v)
     return std::move(decl);
 }
 
@@ -284,6 +293,76 @@ expr_uptr YfxSyntax::parseFloatValue(Token& i, PrimitiveType t) {
     }
 }
 
+expr_uptr YfxSyntax::parseFunctionDeclare() {
+  
+    auto proto = parseFunctionPrototype();
+
+    if(nextToken().type == TokenType::Semicolon) {
+        visit(*proto);
+        return std::move(proto);
+    }
+    
+    if(type() == TokenType::LeftBrace) {
+        push(SynMode::LhsFuncScope);
+        auto body = parseScopeBody();
+        popBeyond(SynMode::LhsFuncScope);
+        
+        return std::make_unique<FunctionAst>(std::move(proto), 
+                                             std::move(body));
+    }
+
+    return nullptr;
+}
+
+expr_uptr YfxSyntax::parseFunctionPrototype() {
+
+    if(nextToken().type != TokenType::Identifier) {
+        std::cerr << "Function prototype expects a name identifier\n";
+        return nullptr;
+    }
+    
+    auto fname = _token.str;
+    std::vector<std::string> args;
+    
+    if(nextToken().type != TokenType::LeftParen) {
+        std::cerr << "Expected '(' in function prototype\n";
+        return nullptr;
+    }
+    
+    nextToken();
+    while(type() != TokenType::RightParen) {
+        
+        if(type() ==  TokenType::Identifier) {
+            args.push_back(_token.str);
+        } else if(type() != TokenType::Comma) {
+            std::cout << "Expected identifier, ',' or ')'\n";
+            break;
+        }
+        nextToken();        
+    }
+    
+    return std::make_unique<PrototypeAst>(fname, args);
+    
+}
+
+expr_uptr YfxSyntax::parseScopeBody() {
+    
+    expr_uptr expression;
+    while(nextToken().type != TokenType::RightBrace) {
+        if(type() == TokenType::LeftBrace) {
+            push(SynMode::LhsExprScope);
+            parseScopeBody();
+            popBeyond(SynMode::LhsExprScope);
+        }
+        expression = parseExpression();
+        //visit(*expression);              
+    }
+    return std::move(expression);
+}
+
+
+
+
 int YfxSyntax::getPrecedence(TokenType token) {
     auto it = _precedence.find(token);
     if(it == std::end(_precedence)) return -1;
@@ -295,7 +374,8 @@ int YfxSyntax::getPrecedence(TokenType token) {
 void YfxSyntax::popToScope() {
     while(top() != SynMode::LhsFuncScope 
     && top()    != SynMode::LhsModuleScope
-    && top()    != SynMode::LhsGlobalScope) {
+    && top()    != SynMode::LhsGlobalScope
+    && top()    != SynMode::LhsExprScope) {
         pop();
     }
 }

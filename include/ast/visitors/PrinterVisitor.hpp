@@ -29,6 +29,8 @@ public:
 	void visit(CallAst& node) override;
 	void visit(BindAst& node) override;
 	void visit(DeclareAst& node) override;
+	void visit(PrototypeAst& node) override;
+
 
 
 private:

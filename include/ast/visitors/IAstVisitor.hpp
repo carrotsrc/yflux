@@ -28,6 +28,7 @@ public:
 	virtual void visit(BinOpAst& node) = 0;
 	virtual void visit(BindAst& node) = 0;
 	virtual void visit(DeclareAst& node) = 0;
+	virtual void visit(PrototypeAst& node) = 0;
 };
 
 }

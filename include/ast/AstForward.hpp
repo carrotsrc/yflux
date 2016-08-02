@@ -29,11 +29,13 @@ using Float64Ast = FloatAst<double, 64>;
 using Sample32Ast = Float32Ast;
 
 class VariableAst;
+class PrototypeAst;
 class FunctionAst;
 class CallAst;
 class BinOpAst;
 class BindAst;
 class DeclareAst;
+
 
 }
 #endif /* ASTFORWARD_HPP */

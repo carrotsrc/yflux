@@ -1,33 +1,31 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   FunctionAst.hpp
- * Author: cfg
- *
- * Created on 30 July 2016, 16:14
- */
-
 #ifndef FUNCTIONAST_HPP
 #define FUNCTIONAST_HPP
 
 #include "ast/ExprAst.hpp"
+#include "ast/PrototypeAst.hpp"
 
 namespace yfx {
 
 
-class FunctionAst : ExprAst {
+class FunctionAst : public ExprAst {
 public:
-	FunctionAst();
-	FunctionAst(const FunctionAst& orig);
-	virtual ~FunctionAst();
+	FunctionAst(expr_uptr proto, expr_uptr body);
+	FunctionAst(const FunctionAst& orig) = delete;
+	FunctionAst(FunctionAst& orig) = delete;
+	FunctionAst(FunctionAst&& orig);
+	~FunctionAst();
+	
 	void accept(IAstVisitor& visitor) override;
+	
+	ExprAst& protoRef();
+	expr_uptr proto();
+	
+	ExprAst& bodyRef();
+	expr_uptr body();
 
 private:
-
+	expr_uptr _proto, _body;
+	
 };
 
 }

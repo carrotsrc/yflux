@@ -20,6 +20,7 @@ public:
 		LhsGlobalScope,
 		LhsModuleScope,
 		LhsFuncScope,
+		LhsExprScope,
 		
 		LhsVariableDeclare,
 		LhsFunctionDeclare,

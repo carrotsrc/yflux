@@ -54,6 +54,9 @@ const Token YfxToken::extractNext() {
         case '-': nextChar(); return processSpecSub();
         case '(': nextChar(); return Token(TokenType::LeftParen);
         case ')': nextChar(); return Token(TokenType::RightParen);
+        
+        case '{': nextChar(); return Token(TokenType::LeftBrace);
+        case '}': nextChar(); return Token(TokenType::RightBrace);
     }
     
     // Identifier

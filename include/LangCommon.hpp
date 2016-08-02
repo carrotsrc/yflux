@@ -24,6 +24,10 @@ enum class TokenType {
 
 	LeftParen,
 	RightParen,
+	LeftBrace,
+	RightBrace,
+	LeftSquare,
+	RightSquare,
 	
 	Identifier,
 	TypeSpecifier,
