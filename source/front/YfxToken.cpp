@@ -105,6 +105,7 @@ const Token YfxToken::processIdent(std::string& ident) {
     if( it != std::end(_primitives)) {
         Token t(TokenType::PrimitiveType);
         t.primitive = it->second;
+        t.str = ident;
         return t;
     }
     

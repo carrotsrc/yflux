@@ -1,8 +1,9 @@
 #include "ast/PrototypeAst.hpp"
 
 using namespace yfx;
-
-PrototypeAst::PrototypeAst(std::string name, std::vector<std::string> args)
+using FormalParameter = PrototypeAst::FormalParameter;
+PrototypeAst::PrototypeAst(std::string name,
+                           std::vector<FormalParameter> args)
     : _name(name), _args(args)
 { }
 
@@ -11,10 +12,9 @@ PrototypeAst::PrototypeAst(const PrototypeAst& orig)
 { }
 
 PrototypeAst::~PrototypeAst()
-{
-}
+{ }
 
-std::vector<std::string>& PrototypeAst::args() {
+std::vector<FormalParameter>& PrototypeAst::args() {
     return _args;
 }
 

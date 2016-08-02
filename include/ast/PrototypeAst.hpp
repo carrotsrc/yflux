@@ -7,18 +7,21 @@ namespace yfx {
 
 class PrototypeAst : public ExprAst {
 public:
-	PrototypeAst(std::string name, std::vector<std::string> args);
+	typedef std::pair<std::string,Token> FormalParameter;
+public:
+	PrototypeAst(std::string name,
+				 std::vector<FormalParameter> args);
+
 	PrototypeAst(const PrototypeAst& orig);
 	~PrototypeAst();
 	
 	void accept(IAstVisitor& visitor) override;
-
 	
 	std::string& name();
-	std::vector<std::string>& args();
+	std::vector<FormalParameter>& args();
 private:
 	std::string _name;
-	std::vector<std::string> _args;
+	std::vector<FormalParameter> _args;
 };
 
 }

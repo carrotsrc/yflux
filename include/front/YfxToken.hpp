@@ -65,7 +65,7 @@ private:
 	const Token processSpecSub();
 	const Token processSpecMul();
 	
-	
+
 	std::map<std::string, PrimitiveType> _primitives = {
 		{ "i16", PrimitiveType::I16 },
 		{ "i32", PrimitiveType::I32 },

@@ -322,7 +322,7 @@ expr_uptr YfxSyntax::parseFunctionPrototype() {
     }
     
     auto fname = _token.str;
-    std::vector<std::string> args;
+    std::vector<PrototypeAst::FormalParameter> args;
     
     if(nextToken().type != TokenType::LeftParen) {
         std::cerr << "Expected '(' in function prototype\n";
@@ -330,12 +330,16 @@ expr_uptr YfxSyntax::parseFunctionPrototype() {
     }
     
     nextToken();
+    std::string varlabel;
     while(type() != TokenType::RightParen) {
         
         if(type() ==  TokenType::Identifier) {
-            args.push_back(_token.str);
+            varlabel = _token.str;
+        } else if(type() == TokenType::TypeSpecifier) {
+            nextToken();
+            args.push_back(std::make_pair(varlabel, _token));
         } else if(type() != TokenType::Comma) {
-            std::cout << "Expected identifier, ',' or ')'\n";
+            std::cout << "Expected identifier, ',' or ')' `"<<TokenStrings[type()]<<"`\n";
             break;
         }
         nextToken();        

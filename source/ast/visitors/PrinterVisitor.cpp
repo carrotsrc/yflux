@@ -183,7 +183,7 @@ void PrinterVisitor::visit(PrototypeAst& node) {
         
         auto args = node.args();
         for(auto i = std::begin(args); i != std::end(args); i++) {
-            std::cout << *i;
+            std::cout << std::get<0>(*i) <<" ~" << std::get<1>(*i).str;
             if(i+1 != std::end(args))
                 std::cout << ", ";
         }
