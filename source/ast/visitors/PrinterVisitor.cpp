@@ -70,7 +70,8 @@ void PrinterVisitor::visit(VariableAst& node) {
     printTab();
     std::cout 
         << "[Printer] Variable `" << node.name() << "` "
-        << "(mutable: " << node.mut()
+        << " ~" << node.type().str
+        << " (mutable: " << node.mut()
         << ")\n";
 }
 
@@ -183,7 +184,11 @@ void PrinterVisitor::visit(PrototypeAst& node) {
         
         auto args = node.args();
         for(auto i = std::begin(args); i != std::end(args); i++) {
-            std::cout << std::get<0>(*i) <<" ~" << std::get<1>(*i).str;
+            std::string mut("");
+            if(std::get<2>(*i)) {
+                mut += "%";
+            }
+            std::cout << mut << std::get<0>(*i) <<" ~" << std::get<1>(*i).str;
             if(i+1 != std::end(args))
                 std::cout << ", ";
         }

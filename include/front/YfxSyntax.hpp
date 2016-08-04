@@ -20,6 +20,7 @@ private:
 	std::vector< std::unique_ptr<IAstVisitor> > _visitors;
 	YfxToken _processor;
 	Token _token, _last, _ident;
+	VariableAst::DataType _datatype;
 	
 	void runTopLevel();
 	
@@ -38,13 +39,15 @@ private:
 	
 	expr_uptr parseIntegerValue(Token& v, PrimitiveType t);
 	expr_uptr parseFloatValue(Token& v, PrimitiveType t);
+	expr_uptr parseSubExpression();
 	
 	expr_uptr parseBinaryOps(int xprec, expr_uptr lhs);
 	
 	
 	int getPrecedence(TokenType token);
 	
-	inline Token nextToken();
+	inline const Token nextToken();
+	inline const Token peekToken();
 	inline TokenType type();
 	inline void push(SynMode mode);
 	inline void pop();
@@ -64,10 +67,14 @@ private:
 	};
 };
 
-Token YfxSyntax::nextToken() {
+const Token YfxSyntax::nextToken() {
 	_last = _token;
 	_token = _processor.nextToken();
 	return _token;
+}
+
+const Token YfxSyntax::peekToken() {
+	return _processor.peekToken();
 }
 
 TokenType YfxSyntax::type() {

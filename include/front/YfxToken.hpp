@@ -14,6 +14,7 @@ public:
 	
 	void setBuffer(std::unique_ptr<ISourceContainer> source);
 	const Token nextToken();
+	const Token peekToken();
 	
 	
 	enum Mode {

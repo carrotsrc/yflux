@@ -1,5 +1,8 @@
-func foo(a ~i32, b ~i32, c ~i64) {
-    let v = 101*1000;
+let ~u64 bloo = 101;
+
+func foo(%mvar ~i32) {
+    let foo ~u64 = 4*(2+3)+mvar;
 }
 
-foo(foo(1,2,3),x);
+let barfoo ~f32 = 12.3,
+    foobar ~u32 = 1001;

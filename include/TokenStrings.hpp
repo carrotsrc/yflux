@@ -16,6 +16,7 @@ static std::map<TokenType, std::string> TokenStrings {
 	{ TokenType::ArithmeticSub,			"ArithmeticSub"			},
 	{ TokenType::ArithmeticMul,			"ArithmeticMul"			},
 	{ TokenType::ArithmeticDiv,			"ArithmeticDiv"			},
+	{ TokenType::ArithmeticModulo,		"ArithmeticModulo"		},		
 	{ TokenType::LeftParen,				"LeftParens"			},
 	{ TokenType::RightParen,			"RightParens"			},
 	{ TokenType::OperatorBind,			"OperatorBind"			},
@@ -25,6 +26,7 @@ static std::map<TokenType, std::string> TokenStrings {
 	{ TokenType::RelationalLess,		"RelationalLess"		},
 	{ TokenType::RelationalLessEqual,	"RelationalLessEqual"	},
 	{ TokenType::RelationalNotEquality,	"RelationalNotEquality" },
+	{ TokenType::QualifierMutable,		"RelationalNotEquality" },
 	
 };
 

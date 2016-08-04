@@ -7,10 +7,6 @@
 #include "TokenStrings.hpp"
 using namespace yfx;
 
-
-
-
-
 YfxSyntax::YfxSyntax() {
 }
 
@@ -46,7 +42,6 @@ expr_uptr YfxSyntax::parseBinaryOps(int exPrec, expr_uptr lhs) {
         auto tokPrec = getPrecedence(type());
 
         if(tokPrec < exPrec) {
-
             return lhs;
         }
         
@@ -115,7 +110,7 @@ expr_uptr YfxSyntax::parsePrimary() {
     switch(type()) {
         case TokenType::Integer:
             nextToken();
-            return parseIntegerValue(t, PrimitiveType::I32);
+            return parseIntegerValue(t, PrimitiveType::I64);
 
         case TokenType::Float:
             nextToken();
@@ -123,9 +118,28 @@ expr_uptr YfxSyntax::parsePrimary() {
 
         case TokenType::Identifier:
             return parseIdentifier();
+            
+        case TokenType::LeftParen:
+            return parseSubExpression();
         default: return expr_uptr(nullptr);
     }
 }
+
+expr_uptr YfxSyntax::parseSubExpression() {
+    nextToken(); // remove '('
+    
+    auto expr = parseExpression();
+    
+    if(type() != TokenType::RightParen) {
+        std::cerr << "Expected ')' at end of sub expression\n";
+        return nullptr;
+    }
+    nextToken();
+    visit(*expr);
+    return std::move(expr);
+    
+}
+
 
 expr_uptr YfxSyntax::parseVariableDeclare() {
     
@@ -136,20 +150,45 @@ expr_uptr YfxSyntax::parseVariableDeclare() {
         auto mut = false;
         std::string name;
         expr_uptr v;
+        VariableAst::DataType dt;
+        _datatype = dt; // Flush old data type
+        
         while(1) {
             switch(type()) {
                 case TokenType::QualifierMutable: // `%` encountered
                     mut = true;
                     nextToken();
                     continue;
-                    break;
 
                 case TokenType::Identifier: // Variable name encountered
-                    v = std::make_unique<VariableAst>(_token.str, mut);
+                    _ident = _token;
+                    name = _token.str;
+                    
+
+                    // Check for a type specifier
+                    if(peekToken().type == TokenType::TypeSpecifier) {
+                        nextToken();
+                        dt = nextToken();
+                        _token = _ident;
+                    }
+                    _datatype = dt;
+                    v = std::make_unique<VariableAst>(name, mut, dt);
                     decl = std::make_unique<DeclareAst>(std::move(v), 
                                                         parseIdentifier());
                     visit(*decl);
                     break;
+                    
+                case TokenType::TypeSpecifier:
+                    dt = nextToken();// get the type
+                    nextToken(); // Onto next token
+                    if(dt.type != TokenType::PrimitiveType
+                    && dt.type != TokenType::Identifier) {
+                        std::cerr << "Expected a primitive or identifier "
+                                << "for type specification\n";
+                        dt = VariableAst::DataType();
+                    }
+                    
+                    continue;
 
                 default:
                     std::cerr 
@@ -190,7 +229,7 @@ expr_uptr YfxSyntax::parseIdentifier() {
     if(type() == TokenType::OperatorBind) {
         push(SynMode::RhsVariableBind);
         auto binding = parseValueBind(
-                            std::make_unique<VariableAst>(t.str, false)
+                            std::make_unique<VariableAst>(t.str, false, _datatype)
                         );
         popBeyond(SynMode::RhsVariableBind);
         return std::move(binding);
@@ -331,20 +370,25 @@ expr_uptr YfxSyntax::parseFunctionPrototype() {
     
     nextToken();
     std::string varlabel;
+    //push(SynMode::FuncFormalParams);
+    bool mut = false;
     while(type() != TokenType::RightParen) {
-        
+
         if(type() ==  TokenType::Identifier) {
             varlabel = _token.str;
+        } else if(type() == TokenType::QualifierMutable) {
+            mut = true;
         } else if(type() == TokenType::TypeSpecifier) {
             nextToken();
-            args.push_back(std::make_pair(varlabel, _token));
+            args.push_back(std::make_tuple(varlabel, _token, mut));
+            mut = false;
         } else if(type() != TokenType::Comma) {
             std::cout << "Expected identifier, ',' or ')' `"<<TokenStrings[type()]<<"`\n";
             break;
         }
         nextToken();        
     }
-    
+    //popBeyond(SynMode::FuncFormalParams);
     return std::make_unique<PrototypeAst>(fname, args);
     
 }

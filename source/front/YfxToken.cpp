@@ -32,6 +32,13 @@ const Token YfxToken::nextToken() {
     return extractNext();
 }
 
+const Token YfxToken::peekToken() {
+    auto t = extractNext();
+    _bank.push(t);
+    return t;
+}
+
+
 const Token YfxToken::extractNext() {
     std::string ident, number;
     unsigned int dp = 0;
@@ -125,21 +132,24 @@ const Token YfxToken::processIdent(std::string& ident) {
 }
 
 const Token YfxToken::processSpecTilde() {
-    auto t = extractNext();
-    _bank.push(t);
     
-    
-    switch(t.type) {
-        case TokenType::PrimitiveType:
-            return Token(TokenType::TypeSpecifier);
-            
-        default: return Token(TokenType::BitwiseNot);
+    if(top() == SynMode::LhsVariableDeclare
+    || top() == SynMode::LhsFunctionDeclare) {
+        return Token(TokenType::TypeSpecifier);
     }
+    return Token(TokenType::BitwiseNot);
+
+
 }
 
 const Token YfxToken::processSpecPerc() {
+
     switch(_state.top()) {
-        case Mode::LhsVariableDeclare: return Token(TokenType::QualifierMutable);
+        
+        case Mode::LhsVariableDeclare:
+        case Mode::LhsFunctionDeclare:
+            return Token(TokenType::QualifierMutable);
+
         default: return Token(TokenType::ArithmeticModulo);
     }
 }
