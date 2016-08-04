@@ -8,6 +8,7 @@ namespace yfx {
 class PrototypeAst : public ExprAst {
 public:
 	typedef std::tuple<std::string,Token,bool> FormalParameter;
+	typedef std::vector<FormalParameter> ArgList;
 public:
 	PrototypeAst(std::string name,
 				 std::vector<FormalParameter> args);

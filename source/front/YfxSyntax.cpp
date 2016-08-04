@@ -5,6 +5,7 @@
 #include "ast/CallAst.hpp"
 #include "LangCommon.hpp"
 #include "TokenStrings.hpp"
+#include "ast/ScopeBlockAst.hpp"
 using namespace yfx;
 
 YfxSyntax::YfxSyntax() {
@@ -65,22 +66,31 @@ expr_uptr YfxSyntax::parseBinaryOps(int exPrec, expr_uptr lhs) {
 
 expr_uptr YfxSyntax::parseTopLevel() {
     
+    auto proto = std::make_unique<PrototypeAst>("__module_entry",
+                                                PrototypeAst::ArgList());
+
+    auto scope = std::make_unique<ScopeBlockAst>();
     while(type() != TokenType::Eof) {
 
         auto e = parseExpression();
-
         if(type() == TokenType::Semicolon) {
+            
             popToScope();
         }
-
+        
         if(type() == TokenType::Comma) {
            if(top() == SynMode::RhsVariableBind) {
                popToMode(SynMode::LhsVariableDeclare);
            }
         }
-
+        scope->push(std::move(e));
         nextToken();
     }
+
+    auto mod = std::make_unique<FunctionAst>(std::move(proto), std::move(scope));
+    visit(*mod);
+    
+    return std::move(mod);        
 }
 
 expr_uptr YfxSyntax::parseExpression() {
@@ -94,7 +104,7 @@ expr_uptr YfxSyntax::parseExpression() {
             push(SynMode::LhsFunctionDeclare);
             auto f = parseFunctionDeclare();
             popBeyond(SynMode::LhsFunctionDeclare);
-            visit(*f);
+
             return std::move(f);
         }
     }
@@ -135,7 +145,6 @@ expr_uptr YfxSyntax::parseSubExpression() {
         return nullptr;
     }
     nextToken();
-    visit(*expr);
     return std::move(expr);
     
 }
@@ -175,7 +184,7 @@ expr_uptr YfxSyntax::parseVariableDeclare() {
                     v = std::make_unique<VariableAst>(name, mut, dt);
                     decl = std::make_unique<DeclareAst>(std::move(v), 
                                                         parseIdentifier());
-                    visit(*decl);
+
                     break;
                     
                 case TokenType::TypeSpecifier:
@@ -215,7 +224,7 @@ expr_uptr YfxSyntax::parseIdentifier() {
     
     if(type() != TokenType::LeftParen && type() != TokenType::OperatorBind) {
        auto v = std::make_unique<VariableAst>(t.str, false);
-       visit(*v);
+
        
        // If we're in a variable declare and there is no binding, we don't
        // need this node since it's a duplicate of the one in the `declare`
@@ -267,7 +276,7 @@ expr_uptr YfxSyntax::parseIdentifier() {
     
     auto call = std::make_unique<CallAst>(t.str, std::move(args));
     
-    visit(*call);
+
     
     return std::move(call);   
 }
@@ -337,7 +346,7 @@ expr_uptr YfxSyntax::parseFunctionDeclare() {
     auto proto = parseFunctionPrototype();
 
     if(nextToken().type == TokenType::Semicolon) {
-        visit(*proto);
+
         return std::move(proto);
     }
     
@@ -395,17 +404,19 @@ expr_uptr YfxSyntax::parseFunctionPrototype() {
 
 expr_uptr YfxSyntax::parseScopeBody() {
     
-    expr_uptr expression;
+    auto scope = std::make_unique<ScopeBlockAst>();
+
     while(nextToken().type != TokenType::RightBrace) {
         if(type() == TokenType::LeftBrace) {
             push(SynMode::LhsExprScope);
-            parseScopeBody();
+            scope->push(parseScopeBody());
             popBeyond(SynMode::LhsExprScope);
+            continue;
         }
-        expression = parseExpression();
-        //visit(*expression);              
+        
+        scope->push(parseExpression());
     }
-    return std::move(expression);
+    return std::move(scope);
 }
 
 

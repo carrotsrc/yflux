@@ -10,6 +10,7 @@ set( SRC ${SRC}
          ${CLD}/BinOpAst.cpp
          ${CLD}/BindAst.cpp
          ${CLD}/DeclareAst.cpp
+         ${CLD}/ScopeBlockAst.cpp
          ${CLD}/visitors/PrinterVisitor.cpp
      PARENT_SCOPE)
 

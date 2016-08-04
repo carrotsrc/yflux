@@ -29,6 +29,7 @@ public:
 	virtual void visit(BindAst& node) = 0;
 	virtual void visit(DeclareAst& node) = 0;
 	virtual void visit(PrototypeAst& node) = 0;
+	virtual void visit(ScopeBlockAst& node) = 0;
 };
 
 }

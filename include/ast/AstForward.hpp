@@ -28,6 +28,7 @@ using Float32Ast = FloatAst<float, 32>;
 using Float64Ast = FloatAst<double, 64>;
 using Sample32Ast = Float32Ast;
 
+class ScopeBlockAst;
 class VariableAst;
 class PrototypeAst;
 class FunctionAst;

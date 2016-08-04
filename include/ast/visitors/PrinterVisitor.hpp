@@ -30,6 +30,7 @@ public:
 	void visit(BindAst& node) override;
 	void visit(DeclareAst& node) override;
 	void visit(PrototypeAst& node) override;
+	void visit(ScopeBlockAst& node) override;
 
 
 

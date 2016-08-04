@@ -3,6 +3,7 @@
 #include "ast/BinOpAst.hpp"
 #include "ast/CallAst.hpp"
 #include "TokenStrings.hpp"
+#include "ast/ScopeBlockAst.hpp"
 #include <cstdint>
 #include <iostream>
 using namespace yfx;
@@ -20,56 +21,56 @@ PrinterVisitor::~PrinterVisitor() {
 void PrinterVisitor::visit(Int16Ast& node) {
     printTab();
     std::cout 
-        << "[Printer] i16 " << node.value() << "\n";
+        << "i16 " << node.value() << "\n";
         
 }
 
 void PrinterVisitor::visit(Int32Ast& node) {
     printTab();
     std::cout 
-        << "[Printer] i32 " << node.value() << "\n";
+        << "i32 " << node.value() << "\n";
 }
 
 void PrinterVisitor::visit(Int64Ast& node) {
         printTab();
         std::cout 
-        << "[Printer] i64 " << node.value() << "\n";
+        << "i64 " << node.value() << "\n";
 }
 
 void PrinterVisitor::visit(UInt16Ast& node) {
     printTab();
     std::cout 
-        << "[Printer] u16 " << node.value() << "\n";
+        << "u16 " << node.value() << "\n";
 }
 
 void PrinterVisitor::visit(UInt32Ast& node) {
     printTab();
     std::cout 
-        << "[Printer] u32 " << node.value() << "\n";
+        << "u32 " << node.value() << "\n";
 }
 
 void PrinterVisitor::visit(UInt64Ast& node) {
     printTab();
     std::cout 
-        << "[Printer] u64 " << node.value() << "\n";
+        << "u64 " << node.value() << "\n";
 }
 
 void PrinterVisitor::visit(Float32Ast& node) {
     printTab();
     std::cout 
-        << "[Printer] f32 " << node.value() << "\n";
+        << "f32 " << node.value() << "\n";
 }
 
 void PrinterVisitor::visit(Float64Ast& node) {
     printTab();
     std::cout 
-        << "[Printer] f64 " << node.value() << "\n";
+        << "f64 " << node.value() << "\n";
 }
 
 void PrinterVisitor::visit(VariableAst& node) {
     printTab();
     std::cout 
-        << "[Printer] Variable `" << node.name() << "` "
+        << "Variable `" << node.name() << "` "
         << " ~" << node.type().str
         << " (mutable: " << node.mut()
         << ")\n";
@@ -78,7 +79,7 @@ void PrinterVisitor::visit(VariableAst& node) {
 void PrinterVisitor::visit(FunctionAst& node) {
     printTab();
     std::cout
-        << "[Printer] Function\n";
+        << "Function\n";
     
     _depth++;
     node.protoRef().accept(*this);
@@ -96,7 +97,7 @@ void PrinterVisitor::visit(FunctionAst& node) {
 void PrinterVisitor::visit(BinOpAst& node) {
     printTab();
     std::cout 
-        << "[Printer] Binary Operation node \n";
+        << "Binary Operation node \n";
     printTab();
     std::cout 
         << "   Operator " << TokenStrings[node.op()] << "\n";
@@ -121,7 +122,7 @@ void PrinterVisitor::visit(BinOpAst& node) {
 void PrinterVisitor::visit(CallAst& node) {
     printTab();
     std::cout 
-        << "[Printer] Call node `"<<node.calling() <<"()`" 
+        << "Call node `"<<node.calling() <<"()`" 
         <<"(num args: "<< node.argsRef().size()
         << "): \n";
     _depth++;
@@ -134,7 +135,7 @@ void PrinterVisitor::visit(CallAst& node) {
 void PrinterVisitor::visit(BindAst& node) {
     printTab();
     std::cout 
-        << "[Printer] Bind for:\n";
+        << "Bind for:\n";
     
     _depth++;
     node.variableRef().accept(*this);
@@ -151,7 +152,7 @@ void PrinterVisitor::visit(BindAst& node) {
 void PrinterVisitor::visit(DeclareAst& node) {
     printTab();
     std::cout 
-        << "[Printer] Declaration:\n";
+        << "Declaration:\n";
     
     _depth++;
     node.variableRef().accept(*this);
@@ -179,7 +180,7 @@ void PrinterVisitor::printTab() {
 void PrinterVisitor::visit(PrototypeAst& node) {
     printTab();
         std::cout 
-            << "[Printer] Prototype "
+            << "Prototype "
             << node.name() << "(";
         
         auto args = node.args();
@@ -194,4 +195,16 @@ void PrinterVisitor::visit(PrototypeAst& node) {
         }
         
          std::cout << ")\n";
+}
+
+void PrinterVisitor::visit(ScopeBlockAst& node) {
+    printTab();
+        std::cout  << "Scope Block\n";
+        
+        _depth++;
+        for(auto& e : node.blockRef()) {
+            if(!e) continue;
+            e->accept(*this);
+        }
+        _depth--;
 }
